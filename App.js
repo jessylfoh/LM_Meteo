@@ -5,25 +5,32 @@ import HomeScreen from './src/screens/HomeScreen';
 import axios from 'axios'
 import GlobalCard from './src/components/GlobalCard';
 import dayjs from 'dayjs';
+import { ImageBackground } from 'react-native'
 
+function Background(temp) {
+  switch (temp) {
+    case 'Rain': return require('../Weather/src/img/pluie.jpg')
+    case 'Clouds': return require('../Weather/src/img/Nuage.jpg')
+    case 'Clear': return require('../Weather/src/img/soleil.jpg')
+
+  }
+}
 
 const App = () => {
 
-  //Appel de l'API
-  const city='Paris'
-  // const [city, setCity] = useState('Londres')
-  const keyAP = "df37dec74a3e59e6529ef1cd5b3ecfdf"
-  const URL = `https://api.openweathermap.org/data/2.5/weather?q=${city}&lang=fr&appid=${keyAP}`
+  //Initialisation des constantes et states
   const [data, setData] = useState([]);
-  const [temp, setTemp]=useState('')
-
-
+  const [city, setCity] = useState('Rouen')
+  const [temp, setTemp] = useState('')
   const [error, setError] = useState(null);
 
-  console.log(URL)
+
   console.log("city:" + city)
 
+  //Appel de l'API
   const getWeather = async (city) => {
+    const keyAP = "df37dec74a3e59e6529ef1cd5b3ecfdf"
+    const URL = `https://api.openweathermap.org/data/2.5/weather?q=${city}&lang=fr&appid=${keyAP}`
     await axios.get(URL)
       .then(response => {
         setTemp(response.data.main.temp)
@@ -35,22 +42,24 @@ const App = () => {
       })
   }
   useEffect(() => {
-    getWeather()
+    getWeather(city)
 
   }, [])
 
   console.log("les datas", data)
 
-  
+
   let temp_c = 0
   let temp_min_c = 0
   let temp_max_c = 0
-  let feels_like_c = 0  
-  let wind_speed=0
-  let humidity=0
-  let desc="Non Disponible"
-  let date=data.dt 
-  let releve="Non Disponible"
+  let feels_like_c = 0
+  let wind_speed = 0
+  let humidity = 0
+  let desc = "Non Disponible"
+  let date = data.dt
+  let releve = "Non Disponible"
+  let icon = ''
+  let uri_icon = `https://openweathermap.org/img/w/04d.png`
 
   console.log("date: " + date)
 
@@ -61,25 +70,36 @@ const App = () => {
     temp_max_c = (data.main.temp_max - 273.15).toFixed(2)
     feels_like_c = (data.main.feels_like - 273.15).toFixed(2)
     //Conversion de la vitesse du vent
-    wind_speed=(data.wind.speed*3.6).toFixed(2)
+    wind_speed = (data.wind.speed * 3.6).toFixed(2)
     //Autres données
-    desc=data.weather[0].description
-    icon=data.weather[0].icon
-    humidity=(data.main.humidity)    
-    releve=dayjs(Date(date)).format('DD/MM/YYYY HH:mm')
+    desc = data.weather[0].description
+    icon = data.weather[0].icon
+    uri_icon = `https://openweathermap.org/img/w/${icon}.png`
+    humidity = (data.main.humidity)
+    releve = dayjs(Date(date)).format('DD/MM/YYYY HH:mm')
     console.log("releve: " + releve)
- 
+    console.log('uri_icon: ' + uri_icon)
+    console.log("main " + data.weather?.[0].main)
+
 
 
   }
 
   return (
     <View style={styles.container}>
-      <Searchbar />
-      <Text style={styles.title}>{city}</Text>     
+      <ImageBackground source={Background(data.weather?.[0].main)} resizeMode="cover" style={styles.image}>
+        <Searchbar style={{borderRadius:15, marginTop:10}}
+        placeholder="Votre ville"
+        onChangeText={city => setCity(city)}
+        onBlur={() => getWeather(city)}
+        value={city}
+      />
      
+
+      <Text style={styles.title}>{city}</Text>
+
       <GlobalCard
-        city={city}      
+        city={city}
         temp_c={temp_c}
         temp_min_c={temp_min_c}
         temp_max_c={temp_max_c}
@@ -88,9 +108,9 @@ const App = () => {
         humidity={humidity}
         desc={desc}
         releve={releve}
-        icon={icon} 
-        
+        uri_icon={uri_icon}
       />
+      </ImageBackground>
     </View>
   )
 }
@@ -103,8 +123,13 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   title: {
-    fontSize:30,
-    fontWeight:'bold',
-    alignItems:'center'
-}
+    fontSize: 30,
+    fontWeight: 'bold',
+    alignItems: 'center'
+  },
+  image: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
 })
